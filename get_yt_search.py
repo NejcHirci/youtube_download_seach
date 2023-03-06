@@ -1,11 +1,15 @@
+import argparse
+import os.path
+
 from pytube import YouTube, Search, Stream
 import csv
 
 qualities = [320, 160, 128, 70, 50]
 
 
-def get_audio_and_link(request, download_limit=1000, download_audio=False):
-    f = open(f"results_{request}.csv", "w", encoding="utf8", newline='')
+def get_audio_and_link(request, output, download_limit=2000, download_audio=False):
+    path = os.path.join(output, f"results_{request}.csv")
+    f = open(path, "w", encoding="utf8", newline='')
     csv_f = csv.writer(f)
     s = Search(request)
     count = 0
@@ -30,7 +34,7 @@ def get_audio_and_link(request, download_limit=1000, download_audio=False):
                     clip = r.streams.filter(abr=f"{q}kbps", only_audio=True)[0]
                     clip: Stream
                     extension = clip.default_filename.split(".")[-1]
-                    clip.download(filename=f"{count}.{extension}")
+                    clip.download(filename=os.path.join(output, f"{count}.{extension}"))
                     csv_f.writerow([r.title, r.watch_url])
                     f.flush()
                     print(f"Downloaded {r.watch_url}")
@@ -46,6 +50,10 @@ def get_audio_and_link(request, download_limit=1000, download_audio=False):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    get_audio_and_link("slovenska otroška glasba", download_audio=False)
-    get_audio_and_link("slovenske otroške", download_audio=False)
-    get_audio_and_link("slovenske mladinske pesmi", download_audio=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--search', type=str, help='Defines input string')
+    parser.add_argument('--output', type=str, default='.', help='Defines output folder')
+    parser.add_argument('--download_audio', type=bool, default=False, help='Enable download')
+    args = parser.parse_args()
+
+    get_audio_and_link(args.search, args.output, download_audio=args.download_audio)
